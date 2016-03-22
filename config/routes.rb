@@ -2,7 +2,11 @@ Rails.application.routes.draw do
 
   resources :users
   get 'oauth_redirect' => 'users#oauth_redirect'
+  get 'oauth' => 'users#oauth'
+  post 'oauth' => 'users#oauth'
 
+  get 'emotion' => 'users#emotion'
+  get 'user_timeline' => 'users#user_timeline'
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 

@@ -61,21 +61,65 @@ class UsersController < ApplicationController
     end
   end
 
-  # GET /oauth_redirect/:id
+  # GET /oauth_redirect
   def oauth_redirect
-    @code = params[:code]
-    render json: { code: @code }
-    redirect_to 'https://api.weibo.com/oauth2/access_token?' +
-                    "client_id=#{APP_ID}&client_secret=#{APP_SECRET}&" +
-                    'grant_type=authorization_code&' +
-                    "redirect_uri=#{URI.encode('http://183.173.43.1/oauth')}&code=#{@code}"
+    if params.key?('code')
+      response = Net::HTTP.post_form(
+          URI('https://api.weibo.com/oauth2/access_token'),
+          client_id:      APP_ID,
+          client_secret:  APP_SECRET,
+          grant_type:     'authorization_code',
+          redirect_uri:   "http://#{APP_HOST}/oauth_redirect",
+          code:           params['code'])
+      json = JSON.parse(response.body)
+      @token = json['access_token']
+      render :emotion
+    end
   end
-  def oauth
-    @token = params[:access_token]
-    
+
+  def user_timeline
+    uri ='https://api.weibo.com/2/statuses/user_timeline.json?'+
+        "source=#{APP_ID}&access_token=#{params['access_token']}"
+    response = Net::HTTP.get_response(URI(uri))
+    json = JSON.parse(response.body)
+    happy, unhappy, count = 0.0, 0.0, 0
+    if json.key?('statuses')
+      statuses = json['statuses']
+      statuses.each do |s|
+        text = s['text']
+        current_words = ((text.scan /\[[^\[\]]+\]/).map { |x| x[1...-1] })
+        h, u = get_em(current_words)
+        happy += h * current_words.size
+        unhappy += u * current_words.size
+        s['count'] = current_words.size
+        s['happy'] = h
+        s['unhappy'] = u
+        count += s['count']
+      end
+      render json: { posts: statuses, happy: happy / count, unhappy: unhappy / count }
+    else
+      render json: { posts: [], happy: 0, unhappy: 0 }
+    end
   end
 
   private
+    def get_em(words)
+      uri = URI('http://api.bosondata.net/sentiment/analysis')
+      res = Net::HTTP.start(uri.host, uri.port) do |http|
+        req = Net::HTTP::Post.new(uri)
+        req['Content-Type'] = 'application/json'
+        req['X-Token'] = 'j7qM_fTv.5457.u0OqgFcklbUv'
+        # The body needs to be a JSON string, use whatever you know to parse Hash to JSON
+        req.body = words.to_json
+        http.request(req)
+      end
+      result = JSON.parse(res.body)
+      ret = result.reduce([0, 0]) do |sum, x|
+        [sum.first + x.first, sum.last + x.last]
+      end
+      [ret.first / result.count, ret.last / result.count]
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_user
       @user = User.find(params[:id])

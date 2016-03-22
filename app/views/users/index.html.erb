@@ -5,7 +5,7 @@
             'https://api.weibo.com/oauth2/authorize?' +
                 URI.encode_www_form(client_id: APP_ID,
                                      response_type: 'code',
-                                     redirect_uri: 'http://183.173.48.1/oauth_redirect'),
+                                     redirect_uri: "http://#{APP_HOST}/oauth_redirect"),
             method: :get %>
 
 <table>
