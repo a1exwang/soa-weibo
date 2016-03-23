@@ -1,20 +1,5 @@
 # Place all the behaviors and hooks related to the matching controller here.
 # All this logic will automatically be available in application.js.
 # You can use CoffeeScript in this file: http://coffeescript.org/
-$(document).ready ->
-  if token
-    $.get "/user_timeline?access_token="+token,
-      (data, err) ->
-        $("#emotionInfo").text(JSON.stringify(data))
-        posts = data["posts"]
-        happy = data["happy"]
-        unhappy = data["unhappy"]
-        table = $("emotionTable")
-        table.append("<th><td>Date</td><td>Happy</td><td>Unhappy</td></th>")
-        for i of posts
-          date = posts[i]['date']
-          h = posts[i]['happy']
-          u = posts[i]['unhappy']
-          table.append("<tr><td>"+date+"</td><td>"+h+"</td>"+"<td>"u+"</td></tr>")
-        table.append("<tr><td>Total</td><td>"+happy+"</td>"+"<td>"+unhappy+"</td></tr>")
+
 

@@ -104,6 +104,7 @@ class UsersController < ApplicationController
 
   private
     def get_em(words)
+      return [0.5, 0.5] unless words && words.size > 0
       uri = URI('http://api.bosondata.net/sentiment/analysis')
       res = Net::HTTP.start(uri.host, uri.port) do |http|
         req = Net::HTTP::Post.new(uri)
