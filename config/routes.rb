@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
 
+  root 'users#index'
+
   resources :users
   get 'oauth_redirect' => 'users#oauth_redirect'
   get 'oauth' => 'users#oauth'
