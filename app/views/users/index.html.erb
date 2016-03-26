@@ -1,31 +1,19 @@
 <p id="notice"><%= notice %></p>
 
-<h1>Listing Users</h1>
-<%= link_to 'Sina Weibo',
-            'https://api.weibo.com/oauth2/authorize?' +
-                URI.encode_www_form(client_id: APP_ID,
-                                     response_type: 'code',
-                                     redirect_uri: "http://#{APP_HOST}/oauth_redirect"),
-            method: :get %>
+<h1>Current User: <%= current_user.id %></h1>
+<h2>需要先注册并且登陆才能使用瞄~😉</h2>
+<% if current_user && current_user.token %>
+    <%= link_to 'Test Emotion', emotion_path(current_user.id), method: :get %>
+    <br/>
+    <%= link_to 'Logout', destroy_user_session_path, method: :delete %>
+<% else %>
+    <%= link_to 'Sina Weibo',
+                'https://api.weibo.com/oauth2/authorize?' +
+                    URI.encode_www_form(client_id: APP_ID,
+                                        response_type: 'code',
+                                        redirect_uri: "http://#{APP_HOST}/oauth_redirect"),
+                method: :get %>
 
-<table>
-  <thead>
-    <tr>
-      <th colspan="3"></th>
-    </tr>
-  </thead>
+<% end %>
 
-  <tbody>
-    <% @users.each do |user| %>
-      <tr>
-        <td><%= link_to 'Show', user %></td>
-        <td><%= link_to 'Edit', edit_user_path(user) %></td>
-        <td><%= link_to 'Destroy', user, method: :delete, data: { confirm: 'Are you sure?' } %></td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
 
-<br>
-
-<%= link_to 'New User', new_user_path %>

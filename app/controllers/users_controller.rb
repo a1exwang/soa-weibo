@@ -1,5 +1,6 @@
 class UsersController < ApplicationController
   before_action :set_user, only: [:show, :edit, :update, :destroy]
+  before_action :authenticate_user!
 
   # GET /users
   # GET /users.json
@@ -64,6 +65,7 @@ class UsersController < ApplicationController
   # GET /oauth_redirect
   def oauth_redirect
     if params.key?('code')
+      # code换取token
       response = Net::HTTP.post_form(
           URI('https://api.weibo.com/oauth2/access_token'),
           client_id:      APP_ID,
@@ -73,7 +75,23 @@ class UsersController < ApplicationController
           code:           params['code'])
       json = JSON.parse(response.body)
       @token = json['access_token']
-      render :emotion
+
+      # token换uid
+
+      uri = URI.parse("https://api.weibo.com/2/account/get_uid.json?access_token=#{@token}")
+      response = Net::HTTP.get_response(uri)
+      json = JSON.parse(response.body)
+      @uid = json['uid']
+      if @uid && @token
+        #user = User.find(params['user_id'])
+        user = current_user
+        user.weibo_uid = @uid
+        user.token = @token
+        user.save
+        #sign_in user
+      end
+
+      redirect_to users_path
     end
   end
 
@@ -100,6 +118,53 @@ class UsersController < ApplicationController
     else
       render json: { posts: [], happy: 0, unhappy: 0 }
     end
+  end
+
+  def posts
+    uri ='https://api.weibo.com/2/statuses/user_timeline.json?'+
+        "source=#{APP_ID}&access_token=#{current_user.token}"
+    response = Net::HTTP.get_response(URI(uri))
+    json = JSON.parse(response.body)
+    if json.key?('statuses')
+      statuses = json['statuses']
+      render json: { posts: statuses }
+    else
+      render json: { posts: [] }
+    end
+  end
+
+  def emotion
+    respond_to do |format|
+      format.html do
+        @user = current_user
+        @token = current_user.token
+      end
+      format.json do
+        uri ='https://api.weibo.com/2/statuses/user_timeline.json?'+
+            "source=#{APP_ID}&access_token=#{current_user.token}"
+        response = Net::HTTP.get_response(URI(uri))
+        json = JSON.parse(response.body)
+        happy, unhappy, count = 0.0, 0.0, 0
+        if json.key?('statuses')
+          statuses = json['statuses']
+          statuses.each do |s|
+            text = s['text']
+            current_words = ((text.scan /\[[^\[\]]+\]/).map { |x| x[1...-1] })
+            h, u = get_em(current_words)
+            happy += h * current_words.size
+            unhappy += u * current_words.size
+            s['count'] = current_words.size
+            s['happy'] = h
+            s['unhappy'] = u
+            count += s['count']
+          end
+          render json: { posts: statuses, happy: happy / count, unhappy: unhappy / count }
+        else
+          render json: { posts: [], happy: 0, unhappy: 0 }
+        end
+      end
+    end
+
   end
 
   private

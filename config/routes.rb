@@ -1,5 +1,6 @@
 Rails.application.routes.draw do
 
+  devise_for :users
   root 'users#index'
 
   resources :users
@@ -7,8 +8,9 @@ Rails.application.routes.draw do
   get 'oauth' => 'users#oauth'
   post 'oauth' => 'users#oauth'
 
-  get 'emotion' => 'users#emotion'
   get 'user_timeline' => 'users#user_timeline'
+  get 'posts/:id' => 'users#posts'
+  get 'emotion/:id' => 'users#emotion', as: :emotion
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
